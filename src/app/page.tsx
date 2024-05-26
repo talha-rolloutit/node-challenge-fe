@@ -9,12 +9,27 @@ import {
   TableRow,
 } from "@/components/table";
 import Image from "next/image";
+import ReactPaginate from "react-paginate";
+import { useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useGetPhotos } from "@/hooks/queries/use-get-photos";
 
 export default function Home() {
-  const photos = useGetPhotos();
+  const router = useRouter();
 
-  console.log(photos.data?.data);
+  const searchParams = useSearchParams();
+  const page = searchParams.get("page") ?? "1";
+  const limit = searchParams.get("limit") ?? "10";
+  const tagId = searchParams.get("tagId") ?? "";
+
+  const photos = useGetPhotos({
+    page: Number(page),
+    limit: Number(limit),
+    tagId,
+  });
+  const pageCount = Math.ceil(
+    (photos.data?.meta?.total ?? 0) / (photos.data?.meta?.limit ?? 1)
+  );
 
   return (
     <main>
@@ -49,12 +64,25 @@ export default function Home() {
             </TableRow>
           ))}
         </TableBody>
-        {/* <TableFooter>
+        <TableFooter>
           <TableRow>
-            <TableCell colSpan={3}>Total</TableCell>
-            <TableCell>$2,500.00</TableCell>
+            <TableCell colSpan={4}>
+              <ReactPaginate
+                breakLabel="..."
+                nextLabel="Next >"
+                onPageChange={(event) => {
+                  router.push(`/?page=${event.selected + 1}&limit=${limit}`);
+                }}
+                pageRangeDisplayed={5}
+                pageCount={pageCount}
+                previousLabel="< Previous"
+                renderOnZeroPageCount={null}
+                className="flex justify-evenly"
+                activeClassName="bg-primary text-primary-foreground min-w-[30px] text-center rounded"
+              />
+            </TableCell>
           </TableRow>
-        </TableFooter> */}
+        </TableFooter>
       </Table>
     </main>
   );
