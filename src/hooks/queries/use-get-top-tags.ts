@@ -1,13 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
-import { Pet } from "@/types";
+import { API_URL } from "@/lib/utils";
 
 export function useGetTopTags() {
   return useQuery({
     queryKey: ["TOP_TAGS"],
     queryFn: async () => {
-      const response = await fetch(
-        `http://192.168.1.14:3001/api/photo/top-tags`
-      );
+      const response = await fetch(`${API_URL}/api/photo/top-tags`);
       return response.json() as unknown as {
         count: number;
         id: string;

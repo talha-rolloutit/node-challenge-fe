@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Pet } from "@/types";
+import { API_URL } from "@/lib/utils";
 
 export function useGetPhotos({
   page = 1,
@@ -14,7 +15,7 @@ export function useGetPhotos({
     queryKey: ["PHOTOS", page, limit, tagId],
     queryFn: async () => {
       const response = await fetch(
-        `http://192.168.1.14:3001/api/photo?page=${page}&limit=${limit}&tagId=${tagId}`
+        `${API_URL}/api/photo?page=${page}&limit=${limit}&tagId=${tagId}`
       );
       return response.json() as unknown as {
         data: Pet[];
