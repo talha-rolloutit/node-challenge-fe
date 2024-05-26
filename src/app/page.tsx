@@ -12,9 +12,13 @@ import Image from "next/image";
 import ReactPaginate from "react-paginate";
 import { useSearchParams } from "next/navigation";
 import { useRouter } from "next/navigation";
+import { Badge } from "@/components/badge";
 import { useGetPhotos } from "@/hooks/queries/use-get-photos";
 import { useGetTopTags } from "@/hooks/queries/use-get-top-tags";
-import { Badge } from "@/components/badge";
+import { useDeletePhoto } from "@/hooks/mutations/use-delete-photo";
+import { Pet } from "@/types";
+import { useQueryClient } from "@tanstack/react-query";
+import { cn } from "@/lib/utils";
 
 export default function Home() {
   const router = useRouter();
@@ -35,17 +39,20 @@ export default function Home() {
 
   const topTags = useGetTopTags();
 
-  console.log(topTags.data);
-
   return (
     <main className="container mx-auto py-4 space-y-4">
       <div className="flex flex-wrap gap-6">
         {topTags.data?.map((tag) => (
           <Badge
             key={tag.id}
-            className="cursor-pointer"
+            className={cn(
+              "cursor-pointer",
+              tagId === tag.id
+                ? "bg-primary"
+                : "bg-secondary text-secondary-foreground hover:bg-primary hover:text-primary-foreground"
+            )}
             onClick={() => {
-              router.push(`/?page=${page}&limit=${limit}&tagId=${tag.id}`);
+              router.push(`/?page=1&limit=10&tagId=${tag.id}`);
             }}
           >
             {tag.name}
@@ -64,24 +71,7 @@ export default function Home() {
         </TableHeader>
         <TableBody>
           {photos.data?.data.map((photo) => (
-            <TableRow key={photo.id}>
-              <TableCell>{photo.id}</TableCell>
-              <TableCell>{photo.publishedAt}</TableCell>
-              <TableCell>
-                <Image
-                  src={photo.imageUrl}
-                  alt="A photo of a pet"
-                  width={96}
-                  height={96}
-                  className="size-24"
-                />
-              </TableCell>
-              <TableCell>
-                <button className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground shadow hover:bg-primary/90 h-9 px-4 py-2">
-                  Delete
-                </button>
-              </TableCell>
-            </TableRow>
+            <Row key={photo.id} photo={photo} />
           ))}
         </TableBody>
         <TableFooter>
@@ -107,5 +97,45 @@ export default function Home() {
         </TableFooter>
       </Table>
     </main>
+  );
+}
+
+function Row({ photo }: { photo: Pet }) {
+  const qc = useQueryClient();
+  const deletePhoto = useDeletePhoto();
+
+  const onDeletePhoto = () => {
+    deletePhoto.mutate(photo.id, {
+      onSettled: () => {
+        qc.invalidateQueries({
+          queryKey: ["PHOTOS"],
+        });
+      },
+    });
+  };
+
+  return (
+    <TableRow key={photo.id}>
+      <TableCell>{photo.id}</TableCell>
+      <TableCell>{photo.publishedAt}</TableCell>
+      <TableCell>
+        <Image
+          src={photo.imageUrl}
+          alt="A photo of a pet"
+          width={96}
+          height={96}
+          className="size-24"
+        />
+      </TableCell>
+      <TableCell>
+        <button
+          className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground shadow hover:bg-primary/90 h-9 px-4 py-2"
+          onClick={onDeletePhoto}
+          disabled={deletePhoto.isPending}
+        >
+          {deletePhoto.isPending ? "Deleting..." : "Delete"}
+        </button>
+      </TableCell>
+    </TableRow>
   );
 }
