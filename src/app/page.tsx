@@ -13,6 +13,8 @@ import ReactPaginate from "react-paginate";
 import { useSearchParams } from "next/navigation";
 import { useRouter } from "next/navigation";
 import { useGetPhotos } from "@/hooks/queries/use-get-photos";
+import { useGetTopTags } from "@/hooks/queries/use-get-top-tags";
+import { Badge } from "@/components/badge";
 
 export default function Home() {
   const router = useRouter();
@@ -31,8 +33,26 @@ export default function Home() {
     (photos.data?.meta?.total ?? 0) / (photos.data?.meta?.limit ?? 1)
   );
 
+  const topTags = useGetTopTags();
+
+  console.log(topTags.data);
+
   return (
-    <main>
+    <main className="container mx-auto py-4 space-y-4">
+      <div className="flex flex-wrap gap-6">
+        {topTags.data?.map((tag) => (
+          <Badge
+            key={tag.id}
+            className="cursor-pointer"
+            onClick={() => {
+              router.push(`/?page=${page}&limit=${limit}&tagId=${tag.id}`);
+            }}
+          >
+            {tag.name}
+          </Badge>
+        ))}
+      </div>
+
       <Table>
         <TableHeader>
           <TableRow>
@@ -71,7 +91,9 @@ export default function Home() {
                 breakLabel="..."
                 nextLabel="Next >"
                 onPageChange={(event) => {
-                  router.push(`/?page=${event.selected + 1}&limit=${limit}`);
+                  router.push(
+                    `/?page=${event.selected + 1}&limit=${limit}&tagId=${tagId}`
+                  );
                 }}
                 pageRangeDisplayed={5}
                 pageCount={pageCount}
